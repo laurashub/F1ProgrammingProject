@@ -19,7 +19,6 @@ def dbRead():
 	df1 = df[['#PDB_ID', 'PROT_SEQS', 'DNA_SEQS']].copy()
 	lower = lambda x: x.lower()
 	df1['DNA_SEQS']=df1['DNA_SEQS'].apply(lower)
-	print(df1.head())
 	return df1
 
 # Index(['#PDB_ID', 'ENTRY_ID', 'PUBMED_ID', 'RESOLUTION', 'SPECIES',
@@ -77,10 +76,10 @@ def showResults(seq, df, binding_data):
 			bars[new_key] = [df.at[key, '#PDB_ID']]
 
 	#generate bars
-	for indeces in bars.keys():
-		start, end = indeces.split(',')
+	for indices in bars.keys():
+		start, end = indices.split(',')
 		gf = GraphicFeature(start=int(start), end=int(end), strand=+1, color=random_color(),
-                   label=", ".join(bars[indeces]))
+                   label=", ".join(bars[indices]))
 		feats.append(gf)
 
 	record = GraphicRecord(sequence=seq, features=feats)
@@ -104,6 +103,5 @@ else:
 	print("ERROR: unrecognized characters in input sequence.")
 	sys.exit(-1)
 
-print(matched_proteins)
 showResults(dna_lower, df, matched_proteins)
 
