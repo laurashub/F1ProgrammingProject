@@ -35,7 +35,7 @@ def dbRead():
       #  'TYPE_CONTACTS(1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20)'],
       # dtype='object')
 
-def _findBindingProteins(input_dna, df, dna_len_threshold = None):
+def findBindingProteins(input_dna, df, dna_len_threshold = None):
     dna_seq = df["DNA_SEQS"].str.split(";").values
     match = {} 
     # Record the row number of the protein matched as keys
@@ -97,7 +97,7 @@ df = dbRead()
 
 input_dna = "aaaaaaaaaagtcgcagcgtgggaccgtagctgaGTaattaCGgcagcgcac"
 
-if checkDNA(input_dna):
+if _checkDNA(input_dna):
 	dna_lower = input_dna.lower()
 	matched_proteins = findBindingProteins(dna_lower, df, dna_len_threshold = 5 )
 else:
