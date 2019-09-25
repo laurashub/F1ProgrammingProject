@@ -2,13 +2,39 @@ import requests, io, re, os, sys, argparse, random
 import pandas as pd 
 import matplotlib.pyplot as plt
 import numpy as numpy
-from Bio import Seq
+from urllib.error import HTTPError
+from Bio import Seq, Entrez, SeqIO
+
 #import dna_features_viewer as dfv
 from dna_features_viewer import (GraphicFeature, GraphicRecord,
                                  CircularGraphicRecord)
 
-def _parge_args(file_name):
-	# TODO: allow command line arguments, maybe fasta files if we wanna be fancy
+# Generate the DNA sequence(s) for matching
+# Take dna sequence(string), fasta file, or genbackid as input
+def get_seq(input):
+	seq = None
+	if _checkDNA(input):
+		seq = input
+	elif re.search("fasta", input) != None:
+		seq = parse_fasta(input)
+	elif re.search("[^0-9]+", input) == None:
+		seq = get_seq_from_genbank(input)
+	else:
+		print("The input does not match any format.")
+	return seq
+
+# Get the DNA sequence from NCBI using genbankid
+def get_seq_from_genbank(genbankid):
+	Entrez.email = 'A.N.Other@example.com'
+	try:
+	    with Entrez.efetch(db="nucleotide", rettype="fasta", retmode="text", id=genbankid) as handle:
+	        seq_record = SeqIO.read(handle, "fasta")
+	    return seq_record.seq
+	except HTTPError:
+	    print("The genbank id does not exist!")
+
+# Parse the input fasta file
+def parse_fasta(file_name):
 	fasta_file = open(os.path.abspath(file_name),'r')
 	input_dna = ""
 	for line in fasta_file.readlines():
@@ -94,18 +120,19 @@ def showResults(seq, df, binding_data):
 	record.plot_sequence(ax1)
 
 	fig.tight_layout()
-	plt.show()
+	plt.savefig("result.png")
 
 
 df = dbRead()
-input_dna = _parge_args(sys.argv[1])
+input_dna = get_seq('6873')
+print(input_dna)
 #input_dna = "aaaaaaaaaagtcgcagcgtgggaccgtagctgaGTaattaCGgcagcgcac"
-if _checkDNA(input_dna):
-	dna_lower = input_dna.lower()
-	matched_proteins = findBindingProteins(dna_lower, df, dna_len_threshold = 5 )
-else:
-	print("ERROR: unrecognized characters in input sequence.")
-	sys.exit(-1)
+# if _checkDNA(input_dna):
+# 	dna_lower = input_dna.lower()
+# 	matched_proteins = findBindingProteins(dna_lower, df, dna_len_threshold = 5 )
+# else:
+# 	print("ERROR: unrecognized characters in input sequence.")
+# 	sys.exit(-1)
 
-showResults(dna_lower, df, matched_proteins)
+# showResults(dna_lower, df, matched_proteins)
 
