@@ -1,8 +1,10 @@
 import requests, io
 import pandas as pd 
 import matplotlib.pyplot as mp
+import numpy as numpy
+import re
 
-def db_read():
+def dbRead():
 	url = ("http://melolab.org/pdidb/web/download/pdidb.txt")
 	test = requests.get(url).content
 	df = pd.read_csv(io.StringIO(test.decode('utf-8')), sep='\t', skiprows=5)
@@ -22,12 +24,37 @@ def db_read():
       #  'TYPE_CONTACTS(1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20)'],
       # dtype='object')
 
-def find_binding_proteins(seq, database):
+def findBindingProteins(input_dna, df, dna_len_threshold = None):
+      dna_seq = df["DNA_SEQS"].str.split(";").values
+      match = {} 
+      # Record the row number of the protein matched as keys
+      # Record the starting and end positions of the matched dna as values
+      for i in range(len(dna_seq)):
+            for dna in dna_seq[i]:
+                  if (len(dna) >= dna_len_threshold  or dna_len_threshold == None) and dna in input_dna:
+                        start = input_dna.find(dna)
+                        end = start + len(dna) - 1
+                        match[i] = [start,end]
+                        break;
+      return match
+
+# Check if the input DNA only contains ATGC
+def checkDNA(dna):
+      check = re.search("[^atgcATGC]+", dna)
+      if check == None:
+            return True
+      else:
+            return False
+
+def showResults(seq, binding_data):
 	return None
 
-def show_results(seq, binding_data):
-	return None
+df = dbRead()
 
-db = db_read()
-print(db.head())
+input_dna = "agcgtgggaccgtagctga"
+
+if checkDNA(input_dna):
+      matched_proteins = findBindingProteins(input_dna, df, dna_len_threshold = 5 )
+
+print(matched_proteins)
 
