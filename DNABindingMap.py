@@ -2,7 +2,9 @@ import requests, io, re, os, sys, argparse, random
 import pandas as pd 
 import matplotlib.pyplot as plt
 import numpy as numpy
-from Bio import Seq
+from urllib.error import HTTPError
+from Bio import Seq, Entrez, SeqIO
+
 #import dna_features_viewer as dfv
 from dna_features_viewer import (GraphicFeature, GraphicRecord,
                                  CircularGraphicRecord)
@@ -11,23 +13,23 @@ from dna_features_viewer import (GraphicFeature, GraphicRecord,
 
 class DNABindingMap:
 
-	def __init__(self, sequence = None, fasta = None, genbank_id = None):
+	def __init__(self, sequence = None):
 		#TODO: handle multiple optional arguments
 		self.sequence = ""
 		self.binding_list = []
 
 	def set_sequence(self, sequence):
+		seq = None
 		if DNABindingMap._checkDNA(sequence):
-			self.sequence = sequence.lower()
-			self.binding_list = {}
+			seq = sequence
+		elif re.search("fasta", sequence) != None:
+			seq = DNABindingMap._parse_fasta(sequence)
+		elif re.search("[^0-9]+", sequence) == None:
+			seq = DNABindingMap._get_seq_from_genbank(sequence)
 		else:
-			print("ERROR: unrecognized characters in input sequence.")
-			print(sequence)
+			print("The input does not match any format.")
 			sys.exit(-1)
-
-	def set_sequence_from_fasta(self, fasta_file):
-		seq_from_fasta = DNABindingMap._parge_args(fasta_file)
-		self.set_sequence(seq_from_fasta)
+		self.sequence = seq.lower()
 
 	def get_sequence(self):
 		return self.sequence
@@ -35,19 +37,28 @@ class DNABindingMap:
 	# Check if the input DNA only contains ATGC
 	def _checkDNA(dna):
 		check = re.search("[^atgcATGC]+", dna)
-		print(check)
 		if check == None:
 			return True
 		else:
 			return False
 		
-	def _parge_args(file_name):
+	def _parse_fasta(file_name):
 		fasta_file = open(os.path.abspath(file_name),'r')
 		input_dna = ""
 		for line in fasta_file.readlines():
 			if line[0] != '>':
 				input_dna += line.strip()
 		return input_dna
+
+	# Get the DNA sequence from NCBI using genbankid
+	def _get_seq_from_genbank(genbankid):
+		Entrez.email = 'A.N.Other@example.com'
+		try:
+			with Entrez.efetch(db="nucleotide", rettype="fasta", retmode="text", id=genbankid) as handle:
+				seq_record = SeqIO.read(handle, "fasta")
+			return seq_record.seq
+		except HTTPError:
+			print("The genbank id does not exist!")
 
 	def findBindingProteins(self, dna_len_threshold = None):
 		global df
@@ -64,7 +75,6 @@ class DNABindingMap:
 					match[i] = [start,end]
 					break;
 		self.binding_data = match
-		print(match)
 		return match
 
 
@@ -133,7 +143,8 @@ if __name__ == "__main__":
 	#input_dna = DNABindingMap._parge_args(sys.argv[1])
 	
 	tester_map = DNABindingMap()
-	tester_map.set_sequence_from_fasta(sys.argv[1])
+	tester_map.set_sequence(sys.argv[1])
+	print(tester_map.get_sequence())
 	tester_map.findBindingProteins()
 	tester_map.showResults()
 
