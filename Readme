@@ -1,1 +1,27 @@
-beep boop
+Python Fundamentals 2019 Project
+
+Team Y:
+  Zach Cutts - zachary.cutts@ucsf.edu
+  Muziyue Wu - Muziyue.wu@ucsf.edu
+  Laura Shub - laura.shub@ucsf.edu
+  
+Project goals:
+	Find proteins that will bind to a given DNA sequence and visualize where in the sequence they will bind
+  
+Product:
+	Protein alignment diagram showing DNA-binding motifs with list of corresponding proteins & info
+  
+Project plans:
+	Fetch database and arrange: Zach
+	Matching substrings: Muziyue
+	Matplotlib: Laura
+  
+Detail APIs:
+	Description of the module/class interfaces that will be implemented.
+  
+Code repository:
+  https://github.com/laurashub/F1ProgrammingProject
+  PDIdb: http://melolab.org/pdidb/web/content/download
+
+Sample input and output:
+	Links to data files and generated results.
