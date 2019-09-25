@@ -8,6 +8,7 @@ from dna_features_viewer import (GraphicFeature, GraphicRecord,
                                  CircularGraphicRecord)
 
 def _parge_args():
+	# TODO: allow command line arguments, maybe fasta files if we wanna be fancy
 	return None
 
 
@@ -34,7 +35,7 @@ def dbRead():
       #  'TYPE_CONTACTS(1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20)'],
       # dtype='object')
 
-def findBindingProteins(input_dna, df, dna_len_threshold = None):
+def _findBindingProteins(input_dna, df, dna_len_threshold = None):
     dna_seq = df["DNA_SEQS"].str.split(";").values
     match = {} 
     # Record the row number of the protein matched as keys
@@ -49,7 +50,7 @@ def findBindingProteins(input_dna, df, dna_len_threshold = None):
     return match
 
 # Check if the input DNA only contains ATGC
-def checkDNA(dna):
+def _checkDNA(dna):
       check = re.search("[^atgcATGC]+", dna)
       if check == None:
             return True
@@ -62,6 +63,8 @@ def random_color():
 
 
 def showResults(seq, df, binding_data):
+	# TODO: make PDB ids clickable, go to rcsb page?
+
 	feats=[]
 
 	#consolidate proteins that bind to same indeces
