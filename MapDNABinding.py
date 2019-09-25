@@ -16,6 +16,9 @@ def dbRead():
 	test = requests.get(url).content
 	df = pd.read_csv(io.StringIO(test.decode('utf-8')), sep='\t', skiprows=5)
 	df1 = df[['#PDB_ID', 'PROT_SEQS', 'DNA_SEQS']].copy()
+	lower = lambda x: x.lower()
+	df1['DNA_SEQS']=df1['DNA_SEQS'].apply(lower)
+	print(df1.head())
 	return df1
 
 # Index(['#PDB_ID', 'ENTRY_ID', 'PUBMED_ID', 'RESOLUTION', 'SPECIES',
@@ -32,18 +35,18 @@ def dbRead():
       # dtype='object')
 
 def findBindingProteins(input_dna, df, dna_len_threshold = None):
-      dna_seq = df["DNA_SEQS"].str.split(";").values
-      match = {} 
-      # Record the row number of the protein matched as keys
-      # Record the starting and end positions of the matched dna as values
-      for i in range(len(dna_seq)):
-            for dna in dna_seq[i]:
-                  if (len(dna) >= dna_len_threshold  or dna_len_threshold == None) and dna in input_dna:
-                        start = input_dna.find(dna)
-                        end = start + len(dna) - 1
-                        match[i] = [start,end]
-                        break;
-      return match
+    dna_seq = df["DNA_SEQS"].str.split(";").values
+    match = {} 
+    # Record the row number of the protein matched as keys
+    # Record the starting and end positions of the matched dna as values
+    for i in range(len(dna_seq)):
+    	for dna in dna_seq[i]:
+    		if (len(dna) >= dna_len_threshold  or dna_len_threshold == None) and dna in input_dna:
+    			start = input_dna.find(dna)
+    			end = start + len(dna) - 1
+    			match[i] = [start,end]
+    			break;
+    return match
 
 # Check if the input DNA only contains ATGC
 def checkDNA(dna):
@@ -61,9 +64,20 @@ def random_color():
 def showResults(seq, df, binding_data):
 	feats=[]
 
+	#consolidate proteins that bind to same indeces
+	bars = {}
 	for key, value in binding_data.items():
-		gf = GraphicFeature(start=value[0], end=value[1], strand=+1, color=random_color(),
-                   label=df.at[key, '#PDB_ID'])
+		new_key = str(value[0]) + "," + str(value[1]) 
+		if new_key in bars.keys():
+			bars[new_key].append(df.at[key, '#PDB_ID'])
+		else:
+			bars[new_key] = [df.at[key, '#PDB_ID']]
+
+	#generate bars
+	for indeces in bars.keys():
+		start, end = indeces.split(',')
+		gf = GraphicFeature(start=int(start), end=int(end), strand=+1, color=random_color(),
+                   label=", ".join(bars[indeces]))
 		feats.append(gf)
 
 	record = GraphicRecord(sequence=seq, features=feats)
@@ -72,19 +86,21 @@ def showResults(seq, df, binding_data):
 	ax1, _ = record.plot(ax=ax)
 	record.plot_sequence(ax1)
 
+	fig.tight_layout()
 	plt.show()
 
 
 df = dbRead()
 
-input_dna = "agcgtgggaccgtagctga"
+input_dna = "aaaaaaaaaagtcgcagcgtgggaccgtagctgaGTaattaCGgcagcgcac"
 
 if checkDNA(input_dna):
-      matched_proteins = findBindingProteins(input_dna, df, dna_len_threshold = 5 )
+	dna_lower = input_dna.lower()
+	matched_proteins = findBindingProteins(dna_lower, df, dna_len_threshold = 5 )
 else:
 	print("ERROR: unrecognized characters in input sequence.")
 	sys.exit(-1)
 
 print(matched_proteins)
-showResults(input_dna, df, matched_proteins)
+showResults(dna_lower, df, matched_proteins)
 
