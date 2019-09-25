@@ -1,4 +1,4 @@
-import requests, io, re, sys, argparse, random
+import requests, io, re, os, sys, argparse, random
 import pandas as pd 
 import matplotlib.pyplot as plt
 import numpy as numpy
@@ -7,9 +7,14 @@ from Bio import Seq
 from dna_features_viewer import (GraphicFeature, GraphicRecord,
                                  CircularGraphicRecord)
 
-def _parge_args():
+def _parge_args(file_name):
 	# TODO: allow command line arguments, maybe fasta files if we wanna be fancy
-	return None
+	fasta_file = open(os.path.abspath(file_name),'r')
+	input_dna = ""
+	for line in fasta_file.readlines():
+		if line[0] != '>':
+			input_dna += line.strip()
+	return input_dna
 
 
 def dbRead():
@@ -93,9 +98,8 @@ def showResults(seq, df, binding_data):
 
 
 df = dbRead()
-
-input_dna = "aaaaaaaaaagtcgcagcgtgggaccgtagctgaGTaattaCGgcagcgcac"
-
+input_dna = _parge_args(sys.argv[1])
+#input_dna = "aaaaaaaaaagtcgcagcgtgggaccgtagctgaGTaattaCGgcagcgcac"
 if _checkDNA(input_dna):
 	dna_lower = input_dna.lower()
 	matched_proteins = findBindingProteins(dna_lower, df, dna_len_threshold = 5 )
