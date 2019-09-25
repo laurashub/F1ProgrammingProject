@@ -1,8 +1,15 @@
-import requests, io
+import requests, io, re, sys, argparse, random
 import pandas as pd 
-import matplotlib.pyplot as mp
+import matplotlib.pyplot as plt
 import numpy as numpy
-import re
+from Bio import Seq
+#import dna_features_viewer as dfv
+from dna_features_viewer import (GraphicFeature, GraphicRecord,
+                                 CircularGraphicRecord)
+
+def _parge_args():
+	return None
+
 
 def dbRead():
 	url = ("http://melolab.org/pdidb/web/download/pdidb.txt")
@@ -46,8 +53,27 @@ def checkDNA(dna):
       else:
             return False
 
-def showResults(seq, binding_data):
-	return None
+def random_color():
+	r = lambda: random.randint(0,255)
+	return '#{:02x}{:02x}{:02x}'.format(r(), r(), r())
+
+
+def showResults(seq, df, binding_data):
+	feats=[]
+
+	for key, value in binding_data.items():
+		gf = GraphicFeature(start=value[0], end=value[1], strand=+1, color=random_color(),
+                   label=df.at[key, '#PDB_ID'])
+		feats.append(gf)
+
+	record = GraphicRecord(sequence=seq, features=feats)
+
+	fig, ax = plt.subplots()
+	ax1, _ = record.plot(ax=ax)
+	record.plot_sequence(ax1)
+
+	plt.show()
+
 
 df = dbRead()
 
@@ -55,6 +81,10 @@ input_dna = "agcgtgggaccgtagctga"
 
 if checkDNA(input_dna):
       matched_proteins = findBindingProteins(input_dna, df, dna_len_threshold = 5 )
+else:
+	print("ERROR: unrecognized characters in input sequence.")
+	sys.exit(-1)
 
 print(matched_proteins)
+showResults(input_dna, df, matched_proteins)
 
