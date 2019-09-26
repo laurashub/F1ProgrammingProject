@@ -15,7 +15,8 @@ class DNABindingMap:
 
 	def __init__(self, sequence = None):
 		#TODO: handle multiple optional arguments
-		self.sequence = ""
+		if sequence is not None:
+			self.setSequence(sequence)
 		self.binding_data = None
 
 	def setSequence(self, sequence):
@@ -78,6 +79,10 @@ class DNABindingMap:
 		return match
 
 	def getBindingProteins(self, type = None):
+		if self.binding_data == None:
+			print("ERROR: No binding data. Did you forget to call findBindingProteins()?")
+			return None
+
 		binding_proteins = []
 		for key, value in self.binding_data.items():
 			name = df.at[key, '#PDB_ID']
