@@ -16,7 +16,7 @@ class DNABindingMap:
 	def __init__(self, sequence = None):
 		#TODO: handle multiple optional arguments
 		self.sequence = ""
-		self.binding_list = []
+		self.binding_data = None
 
 	def setSequence(self, sequence):
 		seq = None
@@ -91,9 +91,22 @@ class DNABindingMap:
 		r = lambda: random.randint(0,255)
 		return '#{:02x}{:02x}{:02x}'.format(r(), r(), r())
 
-
-	def showResults(self):
+	def showResults(self, classification = None, subtype = None):
 		global df
+
+		if self.binding_data == None:
+			print("ERROR: No binding data. Did you forget to call findBindingProteins()?")
+			return None
+
+		if classification is not None and classification not in df['CLASSIFICATION'].values:
+			print("ERROR: Invalid classification")
+			print("Allowed classifications: " + ", ".join(set(df['CLASSIFICATION'].values)))
+			return
+
+		if subtype is not None and subtype not in df['SUBTYPE'].values:
+			print("ERROR: Invalid subtype")
+			print("Allowed subtypes: " + ", ".join(set(df['SUBTYPE'].values)))
+			return
 		# TODO: make PDB ids clickable, go to rcsb page?
 
 		feats=[]
@@ -102,10 +115,19 @@ class DNABindingMap:
 		bars = {}
 		for key, value in self.binding_data.items():
 			new_key = str(value[0]) + "," + str(value[1]) 
+			if classification != None:
+				if df.at[key, 'CLASSIFICATION'] != classification:
+					continue
+			if subtype != None:
+				if df.at[key, 'SUBTYPE'] != subtype:
+					continue
 			if new_key in bars.keys():
 				bars[new_key].append(df.at[key, '#PDB_ID'])
 			else:
 				bars[new_key] = [df.at[key, '#PDB_ID']]
+
+		if len(bars.keys()) == 0:
+			print("Warning: no binding proteins to show")
 
 		#generate bars
 		for indices in bars.keys():
@@ -149,14 +171,41 @@ def dbRead():
 
 df = dbRead()
 
-if __name__ == "__main__":
-	#input_dna = DNABindingMap._parge_args(sys.argv[1])
-	
+def test1():
 	tester_map = DNABindingMap()
 	tester_map.setSequence(sys.argv[1])
-	print(tester_map.getSequence())
 	tester_map.findBindingProteins()
-	print(tester_map.getBindingProteins())
 	tester_map.showResults()
+
+def test2():
+	tester_map = DNABindingMap()
+	tester_map.setSequence(sys.argv[1])
+	tester_map.showResults()
+
+def test3():
+	tester_map = DNABindingMap()
+	tester_map.setSequence(sys.argv[1])
+	tester_map.findBindingProteins()
+	tester_map.showResults(classification = 'Enzyme')
+
+def test4():
+	tester_map = DNABindingMap()
+	tester_map.setSequence(sys.argv[1])
+	tester_map.findBindingProteins()
+	tester_map.showResults(subtype = 'Zinc finger')
+
+def test5():
+	tester_map = DNABindingMap()
+	tester_map.setSequence(sys.argv[1])
+	tester_map.findBindingProteins()
+	tester_map.showResults(classification = 'fake classification')
+
+if __name__ == "__main__":
+	#input_dna = DNABindingMap._parge_args(sys.argv[1])
+	test1()
+	test2()
+	test3()
+	test4()
+	test5()
 
 
