@@ -53,7 +53,7 @@ class DNABindingMap:
 	def __checkBinding(self):
 		if self.binding_data is None:
 			print("ERROR: No binding data. Did you forget to call findBindingProteins()?")
-			sys.exit(-1)
+			sys.exit()
 		
 	def __parseFasta(file_name):
 		fasta_file = open(os.path.abspath(file_name),'r')
@@ -118,13 +118,20 @@ class DNABindingMap:
 		if classification is not None and classification not in df['CLASSIFICATION'].values:
 			print("ERROR: Invalid classification")
 			print("Allowed classifications: " + ", ".join(sorted(list(set(df['CLASSIFICATION'].values)))))
-			sys.exit(-1) 
+			sys.exit(-1)
 
 	def __checkSubtype(subtype):
 		if subtype is not None and subtype not in df['SUBTYPE'].values:
 			print("ERROR: Invalid subtype")
 			print("Allowed subtypes: " + ", ".join(sorted(list(set(df['SUBTYPE'].values)))))
-			sys.exit(-1) 
+			sys.exit(-1)
+
+	def __checkPDB(self, pdb):
+		pdbs = list(self.getBindingProteins()['#PDB_ID'].values)
+		if pdb not in pdbs:
+			print("ERROR: PDB \"" + pdb + "\" not found")
+			print("Current binding PDB IDs: " + ", ".join(pdbs))
+			sys.exit(-1)
 
 	def __randomColor():
 		r = lambda: random.randint(0,255)
@@ -137,6 +144,7 @@ class DNABindingMap:
 
 		DNABindingMap.__checkClassification(classification)
 		DNABindingMap.__checkSubtype(subtype)
+		self.__checkPDB(pdb)
 
 		# TODO: make PDB ids clickable, go to rcsb page?
 
@@ -254,6 +262,18 @@ def test7():
 	tester_map = DNABindingMap()
 	print(tester_map.getSequence())
 
+def test8():
+	print("---Test 8---")
+	tester_map = DNABindingMap()
+	tester_map.setSequence(sys.argv[1])
+	tester_map.findBindingProteins()
+	tester_map.showResults(pdb= 'xxxxxxx')
+
+def test9():
+	print("---Test 9---")
+	tester_map = DNABindingMap()
+	tester_map.setSequence("adskfhas;dfkhjalskdjhfalksdjhfalksdfjh")
+
 if __name__ == "__main__":
 	#input_dna = DNABindingMap._parge_args(sys.argv[1])
 
@@ -263,6 +283,6 @@ if __name__ == "__main__":
 	#test4()
 	#test5()
 	#test6()
-	test7()
+	test9()
 
 
