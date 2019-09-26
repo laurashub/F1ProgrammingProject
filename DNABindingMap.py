@@ -18,31 +18,31 @@ class DNABindingMap:
 		self.sequence = ""
 		self.binding_list = []
 
-	def set_sequence(self, sequence):
+	def setSequence(self, sequence):
 		seq = None
-		if DNABindingMap._checkDNA(sequence):
+		if DNABindingMap.__checkDNA(sequence):
 			seq = sequence
 		elif re.search("fasta", sequence) != None:
-			seq = DNABindingMap._parse_fasta(sequence)
+			seq = DNABindingMap.__parseFasta(sequence)
 		elif re.search("[^0-9]+", sequence) == None:
-			seq = DNABindingMap._get_seq_from_genbank(sequence)
+			seq = DNABindingMap.__getSeqFromGenbank(sequence)
 		else:
 			print("The input does not match any format.")
 			sys.exit(-1)
 		self.sequence = seq.lower()
 
-	def get_sequence(self):
+	def getSequence(self):
 		return self.sequence
 
 	# Check if the input DNA only contains ATGC
-	def _checkDNA(dna):
+	def __checkDNA(dna):
 		check = re.search("[^atgcATGC]+", dna)
 		if check == None:
 			return True
 		else:
 			return False
 		
-	def _parse_fasta(file_name):
+	def __parseFasta(file_name):
 		fasta_file = open(os.path.abspath(file_name),'r')
 		input_dna = ""
 		for line in fasta_file.readlines():
@@ -51,7 +51,7 @@ class DNABindingMap:
 		return input_dna
 
 	# Get the DNA sequence from NCBI using genbankid
-	def _get_seq_from_genbank(genbankid):
+	def __getSeqFromGenbank(genbankid):
 		Entrez.email = 'A.N.Other@example.com'
 		try:
 			with Entrez.efetch(db="nucleotide", rettype="fasta", retmode="text", id=genbankid) as handle:
@@ -87,7 +87,7 @@ class DNABindingMap:
 		return binding_proteins
 
 
-	def _random_color():
+	def __randomColor():
 		r = lambda: random.randint(0,255)
 		return '#{:02x}{:02x}{:02x}'.format(r(), r(), r())
 
@@ -110,7 +110,7 @@ class DNABindingMap:
 		#generate bars
 		for indices in bars.keys():
 			start, end = indices.split(',')
-			gf = GraphicFeature(start=int(start), end=int(end), strand=+1, color=DNABindingMap._random_color(),
+			gf = GraphicFeature(start=int(start), end=int(end), strand=+1, color=DNABindingMap.__randomColor(),
                    label=", ".join(bars[indices]))
 			feats.append(gf)
 
@@ -153,8 +153,8 @@ if __name__ == "__main__":
 	#input_dna = DNABindingMap._parge_args(sys.argv[1])
 	
 	tester_map = DNABindingMap()
-	tester_map.set_sequence(sys.argv[1])
-	print(tester_map.get_sequence())
+	tester_map.setSequence(sys.argv[1])
+	print(tester_map.getSequence())
 	tester_map.findBindingProteins()
 	print(tester_map.getBindingProteins())
 	tester_map.showResults()
