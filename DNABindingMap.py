@@ -29,7 +29,7 @@ class DNABindingMap:
 		elif re.search("[^0-9]+", sequence) == None:
 			seq = DNABindingMap.__getSeqFromGenbank(sequence)
 		else:
-			print("The input does not match any format.")
+			print("ERROR: Invalid sequence")
 			sys.exit(-1)
 		self.sequence = seq.lower()
 
@@ -64,6 +64,7 @@ class DNABindingMap:
 			return seq_record.seq
 		except HTTPError:
 			print("The genbank id does not exist!")
+			sys.exit(-1)
 
 	def findBindingProteins(self, dna_len_threshold = None):
 		global df
@@ -121,7 +122,7 @@ class DNABindingMap:
 		r = lambda: random.randint(0,255)
 		return '#{:02x}{:02x}{:02x}'.format(r(), r(), r())
 
-	def showResults(self, classification = None, subtype = None):
+	def showResults(self, classification = None, subtype = None, pdb = None):
 		global df
 
 		if self.binding_data == None:
@@ -144,6 +145,9 @@ class DNABindingMap:
 					continue
 			if subtype != None:
 				if df.at[key, 'SUBTYPE'] != subtype:
+					continue
+			if pdb != None:
+				if df.at[key, '#PDB_ID'] != pdb:
 					continue
 			if new_key in bars.keys():
 				bars[new_key].append(df.at[key, '#PDB_ID'])
@@ -194,7 +198,6 @@ def dbRead():
 
 df = dbRead()
 
-
 #### test cases ###
 def test1():
 	print("---Test 1---")
@@ -233,12 +236,22 @@ def test5():
 	tester_map.findBindingProteins()
 	tester_map.showResults(classification = 'fake classification')
 
+def test6():
+	print("---Test 6---")
+	tester_map = DNABindingMap()
+	tester_map.setSequence(sys.argv[1])
+	tester_map.findBindingProteins()
+	tester_map.showResults(pdb= '3BAM')
+
 if __name__ == "__main__":
 	#input_dna = DNABindingMap._parge_args(sys.argv[1])
+	"""
 	test1()
 	test2()
 	test3()
 	test4()
 	test5()
+	"""
+	test6()
 
 
