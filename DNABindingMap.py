@@ -82,19 +82,40 @@ class DNABindingMap:
 		self.binding_data = match
 		return match
 
-	def getBindingProteins(self, type = None):
-		if self.binding_data == None:
-			print("ERROR: No binding data. Did you forget to call findBindingProteins()?")
-			return None
+	def getBindingProteins(self, classification = None, subtype = None):
+
+		if not DNABindingMap._checkClassification(classification) or not DNABindingMap._checkSubtype(subtype):
+			return 
+		print(classification, subtype)
 
 		binding_proteins = []
 		for key, value in self.binding_data.items():
 			name = df.at[key, '#PDB_ID']
-			classification = df.at[key, 'CLASSIFICATION']
-			subtype = df.at[key, 'SUBTYPE']
-			binding_proteins.append((name, classification, subtype, value))
-		return binding_proteins
+			cur_classification = df.at[key, 'CLASSIFICATION']
+			cur_subtype = df.at[key, 'SUBTYPE']
+			binding_proteins.append([name, cur_classification, cur_subtype, value[0], value[1]])
 
+		#filter based on parameters
+		if classification is not None:
+			binding_proteins = [x for x in binding_proteins if x[1] == classification]
+		if subtype is not None:
+			binding_proteins = [x for x in binding_proteins if x[2] == subtype]
+
+		return pd.DataFrame(binding_proteins, columns=['#PDB_ID', 'CLASSIFICATION', 'SUBTYPE', 'START', 'STOP']) 
+
+	def _checkClassification(classification):
+		if classification is not None and classification not in df['CLASSIFICATION'].values:
+			print("ERROR: Invalid classification")
+			print("Allowed classifications: " + ", ".join(sorted(list(set(df['CLASSIFICATION'].values)))))
+			return False
+		return True
+
+	def _checkSubtype(subtype):
+		if subtype is not None and subtype not in df['SUBTYPE'].values:
+			print("ERROR: Invalid subtype")
+			print("Allowed subtypes: " + ", ".join(sorted(list(set(df['SUBTYPE'].values)))))
+			return False
+		return True
 
 	def __randomColor():
 		r = lambda: random.randint(0,255)
@@ -107,15 +128,9 @@ class DNABindingMap:
 			print("ERROR: No binding data. Did you forget to call findBindingProteins()?")
 			return None
 
-		if classification is not None and classification not in df['CLASSIFICATION'].values:
-			print("ERROR: Invalid classification")
-			print("Allowed classifications: " + ", ".join(set(df['CLASSIFICATION'].values)))
-			return
+		if not DNABindingMap._checkClassification(classification) or not DNABindingMap._checkSubtype(subtype):
+			return 
 
-		if subtype is not None and subtype not in df['SUBTYPE'].values:
-			print("ERROR: Invalid subtype")
-			print("Allowed subtypes: " + ", ".join(set(df['SUBTYPE'].values)))
-			return
 		# TODO: make PDB ids clickable, go to rcsb page?
 
 		feats=[]
@@ -162,7 +177,6 @@ def dbRead():
 	#df1 = df[['#PDB_ID', 'PROT_SEQS', 'DNA_SEQS']].copy()
 	lower = lambda x: x.lower()
 	df['DNA_SEQS']=df['DNA_SEQS'].apply(lower)
-	print(df['SUBTYPE'].head())
 	return df
 
 	# Index(['#PDB_ID', 'ENTRY_ID', 'PUBMED_ID', 'RESOLUTION', 'SPECIES',
@@ -180,30 +194,40 @@ def dbRead():
 
 df = dbRead()
 
+
+#### test cases ###
 def test1():
+	print("---Test 1---")
 	tester_map = DNABindingMap()
 	tester_map.setSequence(sys.argv[1])
 	tester_map.findBindingProteins()
+	print(tester_map.getBindingProteins())
 	tester_map.showResults()
 
 def test2():
+	print("---Test 2---")
 	tester_map = DNABindingMap()
 	tester_map.setSequence(sys.argv[1])
 	tester_map.showResults()
 
 def test3():
+	print("---Test 3---")
 	tester_map = DNABindingMap()
 	tester_map.setSequence(sys.argv[1])
 	tester_map.findBindingProteins()
+	print(tester_map.getBindingProteins(classification = 'Enzyme'))
 	tester_map.showResults(classification = 'Enzyme')
 
 def test4():
+	print("---Test 4---")
 	tester_map = DNABindingMap()
 	tester_map.setSequence(sys.argv[1])
 	tester_map.findBindingProteins()
-	tester_map.showResults(subtype = 'Zinc finger')
+	tester_map.getBindingProteins(subtype = 'Zif268 Zinc Finger')
+	tester_map.showResults(subtype = 'Zif268 Zinc Finger')
 
 def test5():
+	print("---Test 5---")
 	tester_map = DNABindingMap()
 	tester_map.setSequence(sys.argv[1])
 	tester_map.findBindingProteins()
