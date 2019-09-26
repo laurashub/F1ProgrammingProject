@@ -34,9 +34,7 @@ class DNABindingMap:
 		self.sequence = seq.lower()
 
 	def getSequence(self):
-		if self.sequence == None:
-			print("ERROR: Current DNABindingMap has no sequence. Did you forget to call setSequence()?")
-			return None
+		self.__checkSeq()
 		return self.sequence
 
 	# Check if the input DNA only contains ATGC
@@ -46,6 +44,16 @@ class DNABindingMap:
 			return True
 		else:
 			return False
+
+	def __checkSeq(self):
+		if self.sequence is None:
+			print("ERROR: Current DNABindingMap has no sequence. Did you forget to call setSequence()?")
+			sys.exit(-1)
+
+	def __checkBinding(self):
+		if self.binding_data is None:
+			print("ERROR: No binding data. Did you forget to call findBindingProteins()?")
+			sys.exit(-1)
 		
 	def __parseFasta(file_name):
 		fasta_file = open(os.path.abspath(file_name),'r')
@@ -63,10 +71,12 @@ class DNABindingMap:
 				seq_record = SeqIO.read(handle, "fasta")
 			return seq_record.seq
 		except HTTPError:
-			print("The genbank id does not exist!")
+			print("ERROR: The genbank id does not exist!")
 			sys.exit(-1)
 
 	def findBindingProteins(self, dna_len_threshold = None):
+		self.__checkSeq()
+
 		global df
 		dna_seq = df["DNA_SEQS"].str.split(";").values
 		match = {} 
@@ -85,9 +95,9 @@ class DNABindingMap:
 
 	def getBindingProteins(self, classification = None, subtype = None):
 
-		if not DNABindingMap._checkClassification(classification) or not DNABindingMap._checkSubtype(subtype):
-			return 
-		print(classification, subtype)
+		self.__checkBinding()
+		DNABindingMap.__checkClassification(classification)
+		DNABindingMap.__checkSubtype(subtype)
 
 		binding_proteins = []
 		for key, value in self.binding_data.items():
@@ -104,19 +114,17 @@ class DNABindingMap:
 
 		return pd.DataFrame(binding_proteins, columns=['#PDB_ID', 'CLASSIFICATION', 'SUBTYPE', 'START', 'STOP']) 
 
-	def _checkClassification(classification):
+	def __checkClassification(classification):
 		if classification is not None and classification not in df['CLASSIFICATION'].values:
 			print("ERROR: Invalid classification")
 			print("Allowed classifications: " + ", ".join(sorted(list(set(df['CLASSIFICATION'].values)))))
-			return False
-		return True
+			sys.exit(-1) 
 
-	def _checkSubtype(subtype):
+	def __checkSubtype(subtype):
 		if subtype is not None and subtype not in df['SUBTYPE'].values:
 			print("ERROR: Invalid subtype")
 			print("Allowed subtypes: " + ", ".join(sorted(list(set(df['SUBTYPE'].values)))))
-			return False
-		return True
+			sys.exit(-1) 
 
 	def __randomColor():
 		r = lambda: random.randint(0,255)
@@ -125,12 +133,10 @@ class DNABindingMap:
 	def showResults(self, classification = None, subtype = None, pdb = None):
 		global df
 
-		if self.binding_data == None:
-			print("ERROR: No binding data. Did you forget to call findBindingProteins()?")
-			return None
+		self.__checkBinding()
 
-		if not DNABindingMap._checkClassification(classification) or not DNABindingMap._checkSubtype(subtype):
-			return 
+		DNABindingMap.__checkClassification(classification)
+		DNABindingMap.__checkSubtype(subtype)
 
 		# TODO: make PDB ids clickable, go to rcsb page?
 
@@ -243,15 +249,20 @@ def test6():
 	tester_map.findBindingProteins()
 	tester_map.showResults(pdb= '3BAM')
 
+def test7():
+	print("---Test 7---")
+	tester_map = DNABindingMap()
+	print(tester_map.getSequence())
+
 if __name__ == "__main__":
 	#input_dna = DNABindingMap._parge_args(sys.argv[1])
-	"""
-	test1()
-	test2()
-	test3()
-	test4()
-	test5()
-	"""
-	test6()
+
+	#test1()
+	#test2()
+	#test2()
+	#test4()
+	#test5()
+	#test6()
+	test7()
 
 
