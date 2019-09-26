@@ -15,6 +15,7 @@ class DNABindingMap:
 
 	def __init__(self, sequence = None):
 		#TODO: handle multiple optional arguments
+		self.sequence = None
 		if sequence is not None:
 			self.setSequence(sequence)
 		self.binding_data = None
@@ -33,6 +34,9 @@ class DNABindingMap:
 		self.sequence = seq.lower()
 
 	def getSequence(self):
+		if self.sequence == None:
+			print("ERROR: Current DNABindingMap has no sequence. Did you forget to call setSequence()?")
+			return None
 		return self.sequence
 
 	# Check if the input DNA only contains ATGC
