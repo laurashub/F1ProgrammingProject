@@ -77,6 +77,15 @@ class DNABindingMap:
 		self.binding_data = match
 		return match
 
+	def getBindingProteins(self, type = None):
+		binding_proteins = []
+		for key, value in self.binding_data.items():
+			name = df.at[key, '#PDB_ID']
+			classification = df.at[key, 'CLASSIFICATION']
+			subtype = df.at[key, 'SUBTYPE']
+			binding_proteins.append((name, classification, subtype, value))
+		return binding_proteins
+
 
 	def _random_color():
 		r = lambda: random.randint(0,255)
@@ -122,6 +131,7 @@ def dbRead():
 	#df1 = df[['#PDB_ID', 'PROT_SEQS', 'DNA_SEQS']].copy()
 	lower = lambda x: x.lower()
 	df['DNA_SEQS']=df['DNA_SEQS'].apply(lower)
+	print(df['SUBTYPE'].head())
 	return df
 
 	# Index(['#PDB_ID', 'ENTRY_ID', 'PUBMED_ID', 'RESOLUTION', 'SPECIES',
@@ -146,6 +156,7 @@ if __name__ == "__main__":
 	tester_map.set_sequence(sys.argv[1])
 	print(tester_map.get_sequence())
 	tester_map.findBindingProteins()
+	print(tester_map.getBindingProteins())
 	tester_map.showResults()
 
 
