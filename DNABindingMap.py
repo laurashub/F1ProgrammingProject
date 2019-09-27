@@ -30,12 +30,17 @@ class DNABindingMap:
 			seq = DNABindingMap.__getSeqFromGenbank(sequence)
 		else:
 			print("ERROR: Invalid sequence")
-			sys.exit(-1)
-		self.sequence = seq.lower()
+			raise DNABindingMapError
+		if seq != None:
+			seq = seq.lower()
+		self.sequence = seq
 
 	def getSequence(self):
-		self.__checkSeq()
-		return self.sequence
+		try:
+			self.__checkSeq()
+			return self.sequence
+		except DNABindingMapError: 
+			pass
 
 	# Check if the input DNA only contains ATGC
 	def __checkDNA(dna):
@@ -48,12 +53,12 @@ class DNABindingMap:
 	def __checkSeq(self):
 		if self.sequence is None:
 			print("ERROR: Current DNABindingMap has no sequence. Did you forget to call setSequence()?")
-			sys.exit(-1)
+			raise DNABindingMapError
 
 	def __checkBinding(self):
 		if self.binding_data is None:
 			print("ERROR: No binding data. Did you forget to call findBindingProteins()?")
-			sys.exit()
+			raise DNABindingMapError
 		
 	def __parseFasta(file_name):
 		fasta_file = open(os.path.abspath(file_name),'r')
@@ -72,7 +77,7 @@ class DNABindingMap:
 			return seq_record.seq
 		except HTTPError:
 			print("ERROR: The genbank id does not exist!")
-			sys.exit(-1)
+			raise DNABindingMapError
 
 	def findBindingProteins(self, dna_len_threshold = None):
 		self.__checkSeq()
@@ -95,98 +100,127 @@ class DNABindingMap:
 
 	def getBindingProteins(self, classification = None, subtype = None):
 
-		self.__checkBinding()
-		DNABindingMap.__checkClassification(classification)
-		DNABindingMap.__checkSubtype(subtype)
+		try:
+			self.__checkBinding()
+			DNABindingMap.__checkClassification(classification)
+			DNABindingMap.__checkSubtype(subtype)
 
-		binding_proteins = []
-		for key, value in self.binding_data.items():
-			name = df.at[key, '#PDB_ID']
-			cur_classification = df.at[key, 'CLASSIFICATION']
-			cur_subtype = df.at[key, 'SUBTYPE']
-			binding_proteins.append([name, cur_classification, cur_subtype, value[0], value[1]])
+			binding_proteins = []
+			for key, value in self.binding_data.items():
+				name = df.at[key, '#PDB_ID']
+				cur_classification = df.at[key, 'CLASSIFICATION']
+				cur_subtype = df.at[key, 'SUBTYPE']
+				binding_proteins.append([name, cur_classification, cur_subtype, value[0], value[1]])
 
-		#filter based on parameters
-		if classification is not None:
-			binding_proteins = [x for x in binding_proteins if x[1] == classification]
-		if subtype is not None:
-			binding_proteins = [x for x in binding_proteins if x[2] == subtype]
+			#filter based on parameters
+			if classification is not None:
+				binding_proteins = [x for x in binding_proteins if x[1] == classification]
+			if subtype is not None:
+				binding_proteins = [x for x in binding_proteins if x[2] == subtype]
 
-		return pd.DataFrame(binding_proteins, columns=['#PDB_ID', 'CLASSIFICATION', 'SUBTYPE', 'START', 'STOP']) 
+			return pd.DataFrame(binding_proteins, columns=['#PDB_ID', 'CLASSIFICATION', 'SUBTYPE', 'START', 'STOP']) 
+		
+		except DNABindingMapError:
+			pass
 
 	def __checkClassification(classification):
 		if classification is not None and classification not in df['CLASSIFICATION'].values:
 			print("ERROR: Invalid classification")
 			print("Allowed classifications: " + ", ".join(sorted(list(set(df['CLASSIFICATION'].values)))))
-			sys.exit(-1)
+			raise DNABindingMapError
 
 	def __checkSubtype(subtype):
 		if subtype is not None and subtype not in df['SUBTYPE'].values:
 			print("ERROR: Invalid subtype")
 			print("Allowed subtypes: " + ", ".join(sorted(list(set(df['SUBTYPE'].values)))))
-			sys.exit(-1)
+			raise DNABindingMapError
 
 	def __checkPDB(self, pdb):
 		pdbs = list(self.getBindingProteins()['#PDB_ID'].values)
-		if pdb not in pdbs:
-			print("ERROR: PDB \"" + pdb + "\" not found")
+		if pdb != None and pdb not in pdbs:
+			print("ERROR: PDB \"" + str(pdb) + "\" not found")
 			print("Current binding PDB IDs: " + ", ".join(pdbs))
-			sys.exit(-1)
+			raise DNABindingMapError
 
 	def __randomColor():
 		r = lambda: random.randint(0,255)
 		return '#{:02x}{:02x}{:02x}'.format(r(), r(), r())
 
-	def showResults(self, classification = None, subtype = None, pdb = None):
+	def showResults(self, classification = None, subtype = None, pdb = None, circular = False, show_sequence = False):
 		global df
 
-		self.__checkBinding()
+		try:
+			self.__checkSeq()
+			self.__checkBinding()
 
-		DNABindingMap.__checkClassification(classification)
-		DNABindingMap.__checkSubtype(subtype)
-		self.__checkPDB(pdb)
+			DNABindingMap.__checkClassification(classification)
+			DNABindingMap.__checkSubtype(subtype)
+			self.__checkPDB(pdb)
 
-		# TODO: make PDB ids clickable, go to rcsb page?
+			# TODO: make PDB ids clickable, go to rcsb page?
 
-		feats=[]
+			feats=[]
 
-		#consolidate proteins that bind to same indeces
-		bars = {}
-		for key, value in self.binding_data.items():
-			new_key = str(value[0]) + "," + str(value[1]) 
-			if classification != None:
-				if df.at[key, 'CLASSIFICATION'] != classification:
-					continue
-			if subtype != None:
-				if df.at[key, 'SUBTYPE'] != subtype:
-					continue
-			if pdb != None:
-				if df.at[key, '#PDB_ID'] != pdb:
-					continue
-			if new_key in bars.keys():
-				bars[new_key].append(df.at[key, '#PDB_ID'])
-			else:
-				bars[new_key] = [df.at[key, '#PDB_ID']]
+			#consolidate proteins that bind to same indeces
+			bars = {}
+			for key, value in self.binding_data.items():
+				new_key = str(value[0]) + "," + str(value[1]) 
+				if classification != None:
+					if df.at[key, 'CLASSIFICATION'] != classification:
+						continue
+				if subtype != None:
+					if df.at[key, 'SUBTYPE'] != subtype:
+						continue
+				if pdb != None:
+					if df.at[key, '#PDB_ID'] != pdb:
+						continue
+				if new_key in bars.keys():
+					bars[new_key].append(df.at[key, '#PDB_ID'])
+				else:
+					bars[new_key] = [df.at[key, '#PDB_ID']]
 
-		if len(bars.keys()) == 0:
-			print("Warning: no binding proteins to show")
+			if len(bars.keys()) == 0:
+				print("Warning: no binding proteins to show")
 
-		#generate bars
-		for indices in bars.keys():
-			start, end = indices.split(',')
-			gf = GraphicFeature(start=int(start), end=int(end), strand=+1, color=DNABindingMap.__randomColor(),
+			#generate bars
+			for indices in bars.keys():
+				start, end = indices.split(',')
+				gf = GraphicFeature(start=int(start), end=int(end), strand=+1, color=DNABindingMap.__randomColor(),
                    label=", ".join(bars[indices]))
-			feats.append(gf)
+				feats.append(gf)
 
-		record = GraphicRecord(sequence=self.sequence,  features=feats)
+			if circular and show_sequence:
+				print("ERROR: Unable to show sequence on circular record".)
+				raise DNABindingMapError
+				
+			if circular:
+				record = CircularGraphicRecord(sequence_length=len(self.sequence), sequence=self.sequence,  features=feats)
+			else:
+				record = GraphicRecord(sequence=self.sequence,  features=feats)
 
-		fig, ax = plt.subplots()
-		#record.plot_sequence(ax)
-		ax1, _ = record.plot(ax=ax)
-		#record.plot_sequence(ax1, {'size': 11})
+			fig, ax = plt.subplots()
+			if show_sequence:
+				record.plot_sequence(ax)
+			ax1, _ = record.plot(ax=ax)
 
-		fig.tight_layout()
-		plt.show()
+			fig.tight_layout()
+			plt.show()
+
+		except DNABindingMapError:
+			print("Unable to show results")
+
+	def reset(self):
+		self.sequence = None
+		self.binding_data = None
+
+	def __str__(self):
+		temp_seq = ""
+		temp_binding = []
+		if self.sequence != None:
+			temp_seq = self.sequence
+		if self.binding_data != None:
+			temp_binding = self.getBindingProteins()
+		return("Seq: {0} \n Binding Data: \n  {1}".format(temp_seq, temp_binding))
 
 def dbRead():
 	url = ("http://melolab.org/pdidb/web/download/pdidb.txt")
@@ -211,6 +245,9 @@ def dbRead():
       # dtype='object')
 
 df = dbRead()
+
+class DNABindingMapError(Exception):
+	pass
 
 #### test cases ###
 def test1():
