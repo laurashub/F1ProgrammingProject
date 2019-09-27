@@ -12,8 +12,17 @@ from dna_features_viewer import (GraphicFeature, GraphicRecord,
 #TODO: Additional error checking, ie cant plot sequence before it's set
 
 class DNABindingMap:
+	"""This class finds the proteins that will bind to a dna sequence.
+
+		Attributes: 
+			sequence(str): the dna sequence used for binding
+			binding_data(dict): the binding map of the dna """
 
 	def __init__(self, sequence = None):
+		"""
+		Args:
+			sequence(str): a dna sequence
+		"""
 		#TODO: handle multiple optional arguments
 		self.sequence = None
 		if sequence is not None:
@@ -21,6 +30,17 @@ class DNABindingMap:
 		self.binding_data = None
 
 	def setSequence(self, sequence):
+		""" This function generate the input DNA sequence that will be used for protein binding and store it in the sequence attribute.
+			It can read the user input in three formats: DNA sequence string, fasta file, and genbank id
+
+			Parameters:
+				sequence(string): the DNA sequence / the path of a fasta file / the genbank id
+
+
+			Example:
+				setSequence("agtctgctgactgacgtttg")
+				setSequence("../filename.fasta")
+				setSequence("568815597") """
 		seq = None
 		if DNABindingMap.__checkDNA(sequence):
 			seq = sequence
@@ -36,14 +56,16 @@ class DNABindingMap:
 		self.sequence = seq
 
 	def getSequence(self):
+		"""
+			This function returns the dna sequence used for binding."""
 		try:
 			self.__checkSeq()
 			return self.sequence
 		except DNABindingMapError: 
 			pass
 
-	# Check if the input DNA only contains ATGC
 	def __checkDNA(dna):
+
 		check = re.search("[^atgcATGC]+", dna)
 		if check == None:
 			return True
@@ -51,6 +73,7 @@ class DNABindingMap:
 			return False
 
 	def __checkSeq(self):
+
 		if self.sequence is None:
 			print("ERROR: Current DNABindingMap has no sequence. Did you forget to call setSequence()?")
 			raise DNABindingMapError
@@ -80,25 +103,52 @@ class DNABindingMap:
 			raise DNABindingMapError
 
 	def findBindingProteins(self, dna_len_threshold = None):
-		self.__checkSeq()
+		"""
+			This function finds the proteins that will bind to the dna sequence.
 
-		global df
-		dna_seq = df["DNA_SEQS"].str.split(";").values
-		match = {} 
-		input_dna = self.sequence
-		# Record the row number of the protein matched as keys
-		#Record the starting and end positions of the matched dna as values
-		for i in range(len(dna_seq)):
-			for dna in dna_seq[i]:
-				if ( dna_len_threshold == None or len(dna) >= dna_len_threshold) and dna in input_dna:
-					start = input_dna.find(dna)
-					end = start + len(dna) - 1
-					match[i] = [start,end]
-					break;
-		self.binding_data = match
-		return match
+			Parameters:
+				dna_len_threshold(int): the shortest length of a matched dna sequence
+
+			Returns:
+				match(dict): 
+					keys: the matched protein indexes in the input dataframe
+					values: the starting and end indexes of the dna that the protein binds
+			Example:
+				match = findBindingProtein(dna_len_threshold = 5) """
+		try:
+			self.__checkSeq()
+
+			global df
+			dna_seq = df["DNA_SEQS"].str.split(";").values
+			match = {} 
+			input_dna = self.sequence
+			# Record the row number of the protein matched as keys
+			#Record the starting and end positions of the matched dna as values
+			for i in range(len(dna_seq)):
+				for dna in dna_seq[i]:
+					if ( dna_len_threshold == None or len(dna) >= dna_len_threshold) and dna in input_dna:
+						start = input_dna.find(dna)
+						end = start + len(dna) - 1
+						match[i] = [start,end]
+						break;
+			self.binding_data = match
+			return match
+		except:
+			pass
 
 	def getBindingProteins(self, classification = None, subtype = None):
+		"""This function get the specified group of proteins for dna binding.
+
+		Parameters:
+			classification(str): The classfication of proteins
+			subtype(str): The sybtype of proteins
+
+		Returns:
+			A panda dataframe with the group of proteins
+
+		Examples:
+			getBindingProteins(classification = "Enzyme")
+			getBindingProteins(classification = "Transcription factor", subtype = "Endonuclease")"""
 
 		try:
 			self.__checkBinding()
@@ -147,6 +197,8 @@ class DNABindingMap:
 		return '#{:02x}{:02x}{:02x}'.format(r(), r(), r())
 
 	def showResults(self, classification = None, subtype = None, pdb = None, circular = False, show_sequence = False):
+		"""
+			This function gives a cartoon plots showing where the proteins bind the dna."""
 		global df
 
 		try:
@@ -222,7 +274,7 @@ class DNABindingMap:
 			temp_binding = self.getBindingProteins()
 		return("Seq: {0} \n Binding Data: \n  {1}".format(temp_seq, temp_binding))
 
-def dbRead():
+def __dbRead():
 	url = ("http://melolab.org/pdidb/web/download/pdidb.txt")
 	test = requests.get(url).content
 	df = pd.read_csv(io.StringIO(test.decode('utf-8')), sep='\t', skiprows=5)
@@ -244,7 +296,7 @@ def dbRead():
       #  'TYPE_CONTACTS(1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20)'],
       # dtype='object')
 
-df = dbRead()
+df = __dbRead()
 
 class DNABindingMapError(Exception):
 	pass
@@ -314,12 +366,12 @@ def test9():
 if __name__ == "__main__":
 	#input_dna = DNABindingMap._parge_args(sys.argv[1])
 
-	#test1()
+	test1()
 	#test2()
 	#test2()
 	#test4()
 	#test5()
 	#test6()
-	test9()
+	#test9()
 
 
