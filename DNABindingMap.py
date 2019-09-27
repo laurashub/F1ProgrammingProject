@@ -1,7 +1,7 @@
 import requests, io, re, os, sys, argparse, random
 import pandas as pd 
 import matplotlib.pyplot as plt
-import numpy as numpy
+#import numpy as numpy
 from urllib.error import HTTPError
 from Bio import Seq, Entrez, SeqIO
 
@@ -97,7 +97,7 @@ class DNABindingMap:
 		try:
 			with Entrez.efetch(db="nucleotide", rettype="fasta", retmode="text", id=genbankid) as handle:
 				seq_record = SeqIO.read(handle, "fasta")
-			return seq_record.seq
+			return str(seq_record.seq)
 		except HTTPError:
 			print("ERROR: The genbank id does not exist!")
 
@@ -267,6 +267,15 @@ class DNABindingMap:
 				record.plot_sequence(ax)
 			ax1, _ = record.plot(ax=ax)
 
+			title_constraints = []
+			if classification is not None:
+				title_constraints.append("Classification={0} ".format(classification))
+			if subtype is not None:
+				title_constraints.append("Subtype={0} ".format(subtype))
+			if pdb is not None:
+				title_constraints.append("PDB={0} ".format(pdb))
+			ax.set_title(", ".join(title_constraints))
+
 			fig.tight_layout()
 
 			if filename is not None:
@@ -291,7 +300,7 @@ class DNABindingMap:
 			temp_binding = self.getBindingProteins()
 		return("Seq: {0} \n Binding Data: \n  {1}".format(temp_seq, temp_binding))
 
-def __dbRead():
+def dbRead():
 	url = ("http://melolab.org/pdidb/web/download/pdidb.txt")
 	test = requests.get(url).content
 	df = pd.read_csv(io.StringIO(test.decode('utf-8')), sep='\t', skiprows=5)
@@ -313,7 +322,7 @@ def __dbRead():
       #  'TYPE_CONTACTS(1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20)'],
       # dtype='object')
 
-df = __dbRead()
+df = dbRead()
 
 class DNABindingMapError(Exception):
 	pass
