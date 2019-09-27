@@ -100,7 +100,6 @@ class DNABindingMap:
 			return seq_record.seq
 		except HTTPError:
 			print("ERROR: The genbank id does not exist!")
-			raise DNABindingMapError
 
 	def findBindingProteins(self, dna_len_threshold = None):
 		"""
@@ -196,9 +195,22 @@ class DNABindingMap:
 		r = lambda: random.randint(0,255)
 		return '#{:02x}{:02x}{:02x}'.format(r(), r(), r())
 
-	def showResults(self, classification = None, subtype = None, pdb = None, circular = False, show_sequence = False):
+	def showResults(self, classification = None, subtype = None, pdb = None, circular = False, show_sequence = False, filename = None):
 		"""
-			This function gives a cartoon plots showing where the proteins bind the dna."""
+		This function gives a cartoon plots showing where the proteins bind the dna.
+
+		Parameters:
+			classification(str): The classfication of proteins
+			subtype(str): The sybtype of proteins
+			pdb(str): PDB ID
+			circular(bool): Display the results in circular plot
+			show_sequence(bool): Show sequence on graph, discouraged for long sequences
+			filename(str): filename to save graph to, otherwise will only show
+
+		Examples:
+			showResults(classification = "Enzyme")
+			showResults(classification = "Transcription factor", subtype = "Endonuclease")"""
+
 		global df
 
 		try:
@@ -242,7 +254,7 @@ class DNABindingMap:
 				feats.append(gf)
 
 			if circular and show_sequence:
-				print("ERROR: Unable to show sequence on circular record".)
+				print("ERROR: Unable to show sequence on circular record.")
 				raise DNABindingMapError
 				
 			if circular:
@@ -256,7 +268,12 @@ class DNABindingMap:
 			ax1, _ = record.plot(ax=ax)
 
 			fig.tight_layout()
-			plt.show()
+
+			if filename is not None:
+				filename = filename.strip('.png')
+				plt.savefig(filename + '.png')
+			else:
+				plt.show()
 
 		except DNABindingMapError:
 			print("Unable to show results")
